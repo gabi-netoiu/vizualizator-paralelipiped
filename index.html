@@ -47,6 +47,19 @@
     .camp input[readonly] { background: #eceef2; color: #5b6475; }
     .camp input.gresit { border-color: #c62828; }
     .mesaj { color: #c62828; font-size: 0.9rem; min-height: 1.2em; margin-top: 2px; }
+    .camp input[type="range"] { width: 100%; }
+    .buton {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: 1px solid #1d2330;
+      border-radius: 6px;
+      background: #fff;
+      color: #1d2330;
+      margin-bottom: 12px;
+    }
+    .buton[aria-pressed="true"] { background: #1d2330; color: #fff; }
     .bifa { display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 12px; }
 
     .rezultate { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; }
@@ -134,6 +147,19 @@
       </section>
 
       <section class="panou" style="margin-top: 16px;">
+        <h2>Vizualizare</h2>
+
+        <div class="camp">
+          <label for="viteza">Viteză de rotație: <span id="valoare-viteza">5 rot/min</span></label>
+          <input id="viteza" type="range" min="0" max="20" step="1" value="5">
+        </div>
+
+        <button id="pauza" class="buton" type="button" aria-pressed="false">Pauză</button>
+
+        <label class="bifa"><input id="ortografic" type="checkbox"> Proiecție ortografică</label>
+      </section>
+
+      <section class="panou" style="margin-top: 16px;">
         <h2>Rezultate</h2>
         <dl class="rezultate">
           <dt>Volum</dt><dd id="rez-volum">—</dd>
@@ -145,7 +171,7 @@
   </main>
 
   <div id="erori" role="alert"></div>
-  <footer>Iterația 3</footer>
+  <footer>Iterația 4</footer>
 
   <script type="module">
     import {
@@ -164,6 +190,9 @@
     };
     const bifaCub = document.getElementById('cub');
     const material = document.getElementById('material');
+    const sliderViteza = document.getElementById('viteza');
+    const butonPauza = document.getElementById('pauza');
+    const bifaOrtografic = document.getElementById('ortografic');
 
     // Scena se încarcă separat: dacă Three.js nu vine din CDN, calculele merg în continuare
     let scena = null;
@@ -172,6 +201,7 @@
       .then(({ creeazaScena }) => {
         scena = creeazaScena(document.getElementById('scena'));
         if (ultimeleDimensiuni) scena.actualizeazaScena(...ultimeleDimensiuni);
+        aplicaVizualizare();
       })
       .catch((eroare) => {
         document.getElementById('scena').textContent = 'Scena 3D nu s-a putut încărca.';
@@ -223,6 +253,27 @@
       camp.addEventListener('input', actualizeaza);
     }
     material.addEventListener('change', actualizeaza);
+
+    // Trimite către scenă starea controalelor din panoul „Vizualizare”
+    function aplicaVizualizare() {
+      const rotPeMinut = Number(sliderViteza.value);
+      const inPauza = butonPauza.getAttribute('aria-pressed') === 'true';
+      document.getElementById('valoare-viteza').textContent = rotPeMinut + ' rot/min';
+      butonPauza.textContent = inPauza ? 'Pornește' : 'Pauză';
+      if (!scena) return;
+      scena.seteazaViteza(rotPeMinut);
+      scena.seteazaPauza(inPauza);
+      scena.seteazaProiectia(bifaOrtografic.checked);
+    }
+
+    sliderViteza.addEventListener('input', aplicaVizualizare);
+    butonPauza.addEventListener('click', () => {
+      const inPauza = butonPauza.getAttribute('aria-pressed') === 'true';
+      butonPauza.setAttribute('aria-pressed', String(!inPauza));
+      aplicaVizualizare();
+    });
+    bifaOrtografic.addEventListener('change', aplicaVizualizare);
+    aplicaVizualizare();
 
     actualizeaza();
     window.interfataPornita = true;

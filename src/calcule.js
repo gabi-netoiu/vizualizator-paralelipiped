@@ -111,6 +111,21 @@ export function distantaCamera(raza, unghiVerticalGrade, raport = 1) {
 }
 
 /**
+ * Jumătatea înălțimii cadrului pentru camera ortografică [m], astfel încât
+ * sfera de rază `raza` să încapă: pe verticală e nevoie de raza, pe orizontală
+ * de raza / raport (pe ecranele înguste lățimea e cea care limitează).
+ * @param raport lățime / înălțime a imaginii
+ */
+export function semiInaltimeOrtografica(raza, raport = 1) {
+  return raza / Math.min(1, raport);
+}
+
+/** Viteza unghiulară [rad/s] din turație [rot/min]: ω = 2π·n / 60 */
+export function vitezaUnghiulara(rotPeMinut) {
+  return (2 * Math.PI * rotPeMinut) / 60;
+}
+
+/**
  * Formatează un număr în stil românesc: virgulă zecimală și spațiu
  * între grupele de trei cifre (ex.: 15000 → „15 000”, 2.5 → „2,50” cu 2 zecimale).
  */

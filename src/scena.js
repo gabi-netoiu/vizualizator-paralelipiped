@@ -6,6 +6,8 @@ import {
   razaSilueta,
   razaIncadrare,
   distantaCamera,
+  semiInaltimeOrtografica,
+  vitezaUnghiulara,
   INALTIME_SILUETA,
   LATIME_SILUETA,
 } from './calcule.js';
@@ -19,13 +21,12 @@ const CULORI = {
 
 const UNGHI_CAMERA = 45; // unghiul de vizualizare vertical [°]
 const MARJA_CADRU = 1.1; // spațiu liber în jurul obiectelor (10%)
-const VITEZA_ROTATIE = 0.5; // [rad/s]; devine reglabilă în Iterația 4
 
 // Direcția din care privește camera: din față-dreapta, puțin de sus
 const DIRECTIE_CAMERA = new THREE.Vector3(0.45, 0.5, 1).normalize();
 
 /**
- * Creează scena în elementul `container` și întoarce funcția de actualizare.
+ * Creează scena în elementul `container` și întoarce funcțiile de control.
  */
 export function creeazaScena(container) {
   const randare = new THREE.WebGLRenderer({ antialias: true });
@@ -39,7 +40,10 @@ export function creeazaScena(container) {
   soare.position.set(3, 5, 4);
   scena.add(soare);
 
-  const camera = new THREE.PerspectiveCamera(UNGHI_CAMERA, 1, 0.01, 1000);
+  // Două camere care privesc din aceeași direcție; se folosește una singură
+  const cameraPerspectiva = new THREE.PerspectiveCamera(UNGHI_CAMERA, 1, 0.01, 1000);
+  const cameraOrtografica = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 1000);
+  let camera = cameraPerspectiva;
 
   // Grupul care se rotește în jurul axei verticale (Y în Three.js)
   const rotitor = new THREE.Group();
@@ -61,21 +65,33 @@ export function creeazaScena(container) {
   let razaCurenta = 1;
   let centruVertical = 0;
 
-  // Recalculează distanța camerei; depinde și de forma imaginii (lată/îngustă)
+  // Reîncadrează ambele camere; depinde și de forma imaginii (lată/îngustă)
   function incadreaza() {
     const latime = container.clientWidth;
     const inaltime = container.clientHeight;
     if (latime === 0 || inaltime === 0) return;
     randare.setSize(latime, inaltime, false);
-    camera.aspect = latime / inaltime;
-
-    const distanta = distantaCamera(razaCurenta * MARJA_CADRU, UNGHI_CAMERA, camera.aspect);
+    const raport = latime / inaltime;
+    const raza = razaCurenta * MARJA_CADRU;
     const centru = new THREE.Vector3(0, centruVertical, 0);
-    camera.position.copy(centru).addScaledVector(DIRECTIE_CAMERA, distanta);
-    camera.lookAt(centru);
-    camera.near = Math.max(0.01, distanta - 3 * razaCurenta);
-    camera.far = distanta + 3 * razaCurenta;
-    camera.updateProjectionMatrix();
+
+    // Perspectivă: camera se apropie sau se depărtează
+    const distanta = distantaCamera(raza, UNGHI_CAMERA, raport);
+    cameraPerspectiva.aspect = raport;
+    // Ortografic: distanța nu schimbă imaginea; contează doar mărimea cadrului
+    const semiInaltime = semiInaltimeOrtografica(raza, raport);
+    cameraOrtografica.top = semiInaltime;
+    cameraOrtografica.bottom = -semiInaltime;
+    cameraOrtografica.left = -semiInaltime * raport;
+    cameraOrtografica.right = semiInaltime * raport;
+
+    for (const cam of [cameraPerspectiva, cameraOrtografica]) {
+      cam.position.copy(centru).addScaledVector(DIRECTIE_CAMERA, distanta);
+      cam.lookAt(centru);
+      cam.near = Math.max(0.01, distanta - 3 * razaCurenta);
+      cam.far = distanta + 3 * razaCurenta;
+      cam.updateProjectionMatrix();
+    }
   }
 
   function actualizeazaScena(L, l, h, material) {
@@ -109,15 +125,29 @@ export function creeazaScena(container) {
 
   new ResizeObserver(incadreaza).observe(container);
 
+  let viteza = vitezaUnghiulara(5); // [rad/s]
+  let inPauza = false;
+
   let timpAnterior = performance.now();
   randare.setAnimationLoop((timp) => {
     const dt = Math.min((timp - timpAnterior) / 1000, 0.1); // limitat după o pauză a tab-ului
     timpAnterior = timp;
-    rotitor.rotation.y += VITEZA_ROTATIE * dt;
+    if (!inPauza) rotitor.rotation.y += viteza * dt;
     randare.render(scena, camera);
   });
 
-  return { actualizeazaScena };
+  return {
+    actualizeazaScena,
+    seteazaViteza(rotPeMinut) {
+      viteza = vitezaUnghiulara(rotPeMinut);
+    },
+    seteazaPauza(valoare) {
+      inPauza = valoare;
+    },
+    seteazaProiectia(ortografica) {
+      camera = ortografica ? cameraOrtografica : cameraPerspectiva;
+    },
+  };
 }
 
 /**
