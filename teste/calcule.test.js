@@ -7,6 +7,8 @@ import {
   arieTotala,
   masa,
   razaSilueta,
+  razaIncadrare,
+  distantaCamera,
   formateazaNumar,
 } from '../src/calcule.js';
 
@@ -104,4 +106,26 @@ test('formateazaNumar grupează miile cu spațiu', () => {
 test('formateazaNumar nu afișează „-0”', () => {
   assert.equal(formateazaNumar(-0.001, 2), '0,00');
   assert.equal(formateazaNumar(-2.5, 1), '-2,5');
+});
+
+test('razaIncadrare cuprinde silueta când obiectul e mai jos decât ea', () => {
+  // 3×4×1 m: pe orizontală 3 m până la siluetă + 0,6 m lățimea ei; pe verticală 1,75 m (silueta)
+  aproape(razaIncadrare(3, 4, 1), Math.hypot(3.6, 0.875));
+});
+
+test('razaIncadrare cuprinde obiectul când e mai înalt decât silueta', () => {
+  // 3×4×10 m: înălțimea relevantă devine 10 m
+  aproape(razaIncadrare(3, 4, 10), Math.hypot(3.6, 5));
+});
+
+test('distantaCamera = raza / sin(½·unghi) pentru imagine pătrată', () => {
+  aproape(distantaCamera(1, 60, 1), 2); // sin 30° = 0,5
+  aproape(distantaCamera(2.5, 90, 1), 2.5 / Math.sin(Math.PI / 4));
+});
+
+test('distantaCamera: imaginea lată limitează pe vertical, cea îngustă pe orizontal', () => {
+  aproape(distantaCamera(1, 60, 2), 2); // lată: contează unghiul vertical
+  const orizontal = Math.atan(Math.tan(Math.PI / 6) * 0.5); // îngustă: unghiul orizontal e mai mic
+  aproape(distantaCamera(1, 60, 0.5), 1 / Math.sin(orizontal));
+  assert.ok(distantaCamera(1, 60, 0.5) > distantaCamera(1, 60, 1));
 });

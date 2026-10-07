@@ -15,6 +15,10 @@ export const DIMENSIUNE_MAX = 100;
 // Distanța suplimentară dintre cercul descris de colțuri și siluetă [m]
 export const MARJA_SILUETA = 0.5;
 
+// Dimensiunile siluetei umane [m]; lățimea include brațele
+export const INALTIME_SILUETA = 1.75;
+export const LATIME_SILUETA = 0.6;
+
 // Numărul de zecimale la afișare
 export const ZECIMALE = {
   volum: 2,
@@ -75,11 +79,35 @@ export function masa(L, l, h, material) {
 }
 
 /**
- * Distanța de la axa de rotație la siluetă [m]:
+ * Distanța de la axa de rotație până la marginea apropiată a siluetei [m]:
  * raza cercului descris de colțuri (½ din diagonala bazei) plus marja.
  */
 export function razaSilueta(L, l) {
   return Math.hypot(L, l) / 2 + MARJA_SILUETA;
+}
+
+/**
+ * Raza sferei care cuprinde tot ce trebuie să încapă în cadru [m]:
+ * obiectul în rotire și silueta. Sfera are centrul pe axa de rotație,
+ * la jumătatea înălțimii celui mai înalt element.
+ */
+export function razaIncadrare(L, l, h) {
+  const razaOrizontala = razaSilueta(L, l) + LATIME_SILUETA; // până la marginea îndepărtată
+  const inaltime = Math.max(h, INALTIME_SILUETA);
+  return Math.hypot(razaOrizontala, inaltime / 2);
+}
+
+/**
+ * Distanța de la cameră la centrul sferei, astfel încât sfera să încapă
+ * exact în cadru: d = raza / sin(½·unghi). Unghiul folosit este cel mai mic
+ * dintre unghiul vertical și cel orizontal (ecranele înguste limitează pe orizontală).
+ * @param unghiVerticalGrade unghiul de vizualizare vertical al camerei [°]
+ * @param raport lățime / înălțime a imaginii
+ */
+export function distantaCamera(raza, unghiVerticalGrade, raport = 1) {
+  const jumatateVerticala = (unghiVerticalGrade * Math.PI) / 180 / 2;
+  const jumatateOrizontala = Math.atan(Math.tan(jumatateVerticala) * raport);
+  return raza / Math.sin(Math.min(jumatateVerticala, jumatateOrizontala));
 }
 
 /**

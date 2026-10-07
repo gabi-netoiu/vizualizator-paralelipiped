@@ -25,10 +25,12 @@
       aspect-ratio: 4 / 3;
       background: #d7dbe2;
       border-radius: 8px;
+      overflow: hidden;
       display: grid;
       place-items: center;
       color: #5b6475;
     }
+    #scena canvas { display: block; width: 100%; height: 100%; }
 
     .panou { background: #fff; border-radius: 8px; padding: 12px 16px; }
     .panou h2 { font-size: 1rem; margin: 0 0 8px; }
@@ -87,12 +89,17 @@
       }
     });
   </script>
+
+  <!-- Three.js din CDN, cu versiune fixată; „three” din import-uri indică aici -->
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
+  </script>
 </head>
 <body>
   <h1>Vizualizator paralelipiped</h1>
 
   <main>
-    <div id="scena">Scena 3D — în Iterația 3</div>
+    <div id="scena">Se încarcă scena 3D…</div>
 
     <div>
       <section class="panou">
@@ -138,7 +145,7 @@
   </main>
 
   <div id="erori" role="alert"></div>
-  <footer>Iterația 2</footer>
+  <footer>Iterația 3</footer>
 
   <script type="module">
     import {
@@ -157,6 +164,19 @@
     };
     const bifaCub = document.getElementById('cub');
     const material = document.getElementById('material');
+
+    // Scena se încarcă separat: dacă Three.js nu vine din CDN, calculele merg în continuare
+    let scena = null;
+    let ultimeleDimensiuni = null; // ultimele valori valide, pentru când scena e gata
+    import('./src/scena.js')
+      .then(({ creeazaScena }) => {
+        scena = creeazaScena(document.getElementById('scena'));
+        if (ultimeleDimensiuni) scena.actualizeazaScena(...ultimeleDimensiuni);
+      })
+      .catch((eroare) => {
+        document.getElementById('scena').textContent = 'Scena 3D nu s-a putut încărca.';
+        arataEroare('Scena 3D: ' + eroare.message);
+      });
 
     // Citește un câmp și afișează mesajul de eroare sub el (sau îl șterge)
     function citesteCamp(nume, afiseazaMesaj = true) {
@@ -184,6 +204,10 @@
         valori.volum = formateazaNumar(volum(L.valoare, l.valoare, h.valoare), ZECIMALE.volum) + ' m³';
         valori.arie = formateazaNumar(arieTotala(L.valoare, l.valoare, h.valoare), ZECIMALE.arie) + ' m²';
         valori.masa = formateazaNumar(masa(L.valoare, l.valoare, h.valoare, material.value), ZECIMALE.masa) + ' kg';
+
+        // La valori greșite scena rămâne la ultima stare validă
+        ultimeleDimensiuni = [L.valoare, l.valoare, h.valoare, material.value];
+        if (scena) scena.actualizeazaScena(...ultimeleDimensiuni);
       }
       document.getElementById('rez-volum').textContent = valori.volum;
       document.getElementById('rez-arie').textContent = valori.arie;
