@@ -3,11 +3,205 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Test publicare</title>
+  <title>Vizualizator paralelipiped</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f4f5f7;
+      color: #1d2330;
+    }
+    h1 { font-size: 1.3rem; margin: 0; padding: 12px 16px; background: #1d2330; color: #fff; }
+
+    /* Ecran îngust: scena sus, controalele dedesubt */
+    main { display: grid; gap: 16px; padding: 16px; }
+    /* Ecran lat: scena în stânga, controalele în dreapta */
+    @media (min-width: 800px) {
+      main { grid-template-columns: 1fr 340px; align-items: start; }
+    }
+
+    #scena {
+      aspect-ratio: 4 / 3;
+      background: #d7dbe2;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #5b6475;
+    }
+
+    .panou { background: #fff; border-radius: 8px; padding: 12px 16px; }
+    .panou h2 { font-size: 1rem; margin: 0 0 8px; }
+
+    .camp { margin-bottom: 12px; }
+    .camp label { display: block; font-weight: 600; margin-bottom: 4px; }
+    .camp input[type="text"], .camp select {
+      width: 100%;
+      padding: 8px;
+      font-size: 1rem; /* sub 16px, iPhone mărește automat pagina la atingere */
+      border: 1px solid #b7bdc8;
+      border-radius: 6px;
+    }
+    .camp input[readonly] { background: #eceef2; color: #5b6475; }
+    .camp input.gresit { border-color: #c62828; }
+    .mesaj { color: #c62828; font-size: 0.9rem; min-height: 1.2em; margin-top: 2px; }
+    .bifa { display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 12px; }
+
+    .rezultate { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; }
+    .rezultate dt { color: #5b6475; }
+    .rezultate dd { margin: 0; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    #erori {
+      display: none;
+      margin: 0 16px 16px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #fdecea;
+      color: #b71c1c;
+      white-space: pre-wrap;
+      font-family: ui-monospace, monospace;
+      font-size: 0.85rem;
+    }
+    footer { padding: 8px 16px 16px; color: #5b6475; font-size: 0.85rem; }
+  </style>
+
+  <!-- Script clasic, rulat înaintea modulului: afișează în pagină orice eroare
+       neprevăzută, pentru că pe telefon consola browserului nu e accesibilă. -->
+  <script>
+    function arataEroare(text) {
+      const caseta = document.getElementById('erori');
+      caseta.style.display = 'block';
+      caseta.textContent += 'Eroare: ' + text + '\n';
+    }
+    window.addEventListener('error', (e) => {
+      arataEroare(e.message + (e.filename ? ` (${e.filename}:${e.lineno})` : ''));
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      arataEroare(String(e.reason));
+    });
+    // Dacă modulul nu a pornit deloc (fișier lipsă, cale greșită), nu apare
+    // niciun eveniment de eroare pe window — verificăm explicit la final.
+    window.addEventListener('load', () => {
+      if (!window.interfataPornita) {
+        arataEroare('Codul aplicației nu a pornit (fișier lipsă sau eroare la încărcare).');
+      }
+    });
+  </script>
 </head>
 <body>
-  <!-- Pagină provizorie: verifică doar că GitHub Pages publică depozitul. Se înlocuiește în Iterația 1. -->
-  <h1>Test publicare – Iterația 0</h1>
-  <p>Dacă vezi acest text, GitHub Pages funcționează. Diacritice: ă â î ș ț, m³, m².</p>
+  <h1>Vizualizator paralelipiped</h1>
+
+  <main>
+    <div id="scena">Scena 3D — în Iterația 3</div>
+
+    <div>
+      <section class="panou">
+        <h2>Date de intrare</h2>
+
+        <div class="camp">
+          <label for="lungime">Lungime L [m]</label>
+          <input id="lungime" type="text" inputmode="decimal" autocomplete="off" value="2">
+          <div class="mesaj" id="mesaj-lungime"></div>
+        </div>
+        <div class="camp">
+          <label for="latime">Lățime l [m]</label>
+          <input id="latime" type="text" inputmode="decimal" autocomplete="off" value="1">
+          <div class="mesaj" id="mesaj-latime"></div>
+        </div>
+        <div class="camp">
+          <label for="inaltime">Înălțime h [m]</label>
+          <input id="inaltime" type="text" inputmode="decimal" autocomplete="off" value="0,5">
+          <div class="mesaj" id="mesaj-inaltime"></div>
+        </div>
+
+        <label class="bifa"><input id="cub" type="checkbox"> Cub (L = l = h)</label>
+
+        <div class="camp">
+          <label for="material">Material</label>
+          <select id="material">
+            <option value="beton">Beton</option>
+            <option value="otel">Oțel</option>
+            <option value="lemn">Lemn</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="panou" style="margin-top: 16px;">
+        <h2>Rezultate</h2>
+        <dl class="rezultate">
+          <dt>Volum</dt><dd id="rez-volum">—</dd>
+          <dt>Arie totală</dt><dd id="rez-arie">—</dd>
+          <dt>Masă</dt><dd id="rez-masa">—</dd>
+        </dl>
+      </section>
+    </div>
+  </main>
+
+  <div id="erori" role="alert"></div>
+  <footer>Iterația 2</footer>
+
+  <script type="module">
+    import {
+      citesteNumar,
+      volum,
+      arieTotala,
+      masa,
+      formateazaNumar,
+      ZECIMALE,
+    } from './src/calcule.js';
+
+    const campuri = {
+      lungime: document.getElementById('lungime'),
+      latime: document.getElementById('latime'),
+      inaltime: document.getElementById('inaltime'),
+    };
+    const bifaCub = document.getElementById('cub');
+    const material = document.getElementById('material');
+
+    // Citește un câmp și afișează mesajul de eroare sub el (sau îl șterge)
+    function citesteCamp(nume, afiseazaMesaj = true) {
+      const rezultat = citesteNumar(campuri[nume].value);
+      const mesaj = afiseazaMesaj && !rezultat.ok ? rezultat.mesaj : '';
+      document.getElementById('mesaj-' + nume).textContent = mesaj;
+      campuri[nume].classList.toggle('gresit', mesaj !== '');
+      return rezultat;
+    }
+
+    function actualizeaza() {
+      const cub = bifaCub.checked;
+      if (cub) {
+        // În modul cub, l și h copiază textul lui L; eroarea apare doar sub L
+        campuri.latime.value = campuri.lungime.value;
+        campuri.inaltime.value = campuri.lungime.value;
+      }
+
+      const L = citesteCamp('lungime');
+      const l = citesteCamp('latime', !cub);
+      const h = citesteCamp('inaltime', !cub);
+
+      const valori = { volum: '—', arie: '—', masa: '—' };
+      if (L.ok && l.ok && h.ok) {
+        valori.volum = formateazaNumar(volum(L.valoare, l.valoare, h.valoare), ZECIMALE.volum) + ' m³';
+        valori.arie = formateazaNumar(arieTotala(L.valoare, l.valoare, h.valoare), ZECIMALE.arie) + ' m²';
+        valori.masa = formateazaNumar(masa(L.valoare, l.valoare, h.valoare, material.value), ZECIMALE.masa) + ' kg';
+      }
+      document.getElementById('rez-volum').textContent = valori.volum;
+      document.getElementById('rez-arie').textContent = valori.arie;
+      document.getElementById('rez-masa').textContent = valori.masa;
+    }
+
+    bifaCub.addEventListener('change', () => {
+      campuri.latime.readOnly = bifaCub.checked;
+      campuri.inaltime.readOnly = bifaCub.checked;
+      actualizeaza();
+    });
+    for (const camp of Object.values(campuri)) {
+      camp.addEventListener('input', actualizeaza);
+    }
+    material.addEventListener('change', actualizeaza);
+
+    actualizeaza();
+    window.interfataPornita = true;
+  </script>
 </body>
 </html>
