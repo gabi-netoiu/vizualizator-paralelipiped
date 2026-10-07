@@ -9,6 +9,8 @@ import {
   razaSilueta,
   razaIncadrare,
   distantaCamera,
+  semiInaltimeOrtografica,
+  vitezaUnghiulara,
   formateazaNumar,
 } from '../src/calcule.js';
 
@@ -128,4 +130,20 @@ test('distantaCamera: imaginea lată limitează pe vertical, cea îngustă pe or
   const orizontal = Math.atan(Math.tan(Math.PI / 6) * 0.5); // îngustă: unghiul orizontal e mai mic
   aproape(distantaCamera(1, 60, 0.5), 1 / Math.sin(orizontal));
   assert.ok(distantaCamera(1, 60, 0.5) > distantaCamera(1, 60, 1));
+});
+
+test('semiInaltimeOrtografica: imaginea lată limitează pe vertical', () => {
+  assert.equal(semiInaltimeOrtografica(2, 1), 2);
+  assert.equal(semiInaltimeOrtografica(2, 4 / 3), 2);
+});
+
+test('semiInaltimeOrtografica: imaginea îngustă limitează pe orizontal', () => {
+  // raport 0,5: lățimea cadrului = 2·H·0,5 = H, deci H trebuie să fie 2·raza
+  assert.equal(semiInaltimeOrtografica(2, 0.5), 4);
+});
+
+test('vitezaUnghiulara transformă rot/min în rad/s', () => {
+  assert.equal(vitezaUnghiulara(0), 0);
+  aproape(vitezaUnghiulara(60), 2 * Math.PI); // o rotație pe secundă
+  aproape(vitezaUnghiulara(5), Math.PI / 6); // ≈ 0,524 rad/s
 });
