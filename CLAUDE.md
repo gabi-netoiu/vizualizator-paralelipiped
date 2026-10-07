@@ -36,7 +36,7 @@ Obiectivul principal este învățarea fluxului de lucru în Claude Code, nu com
 - Toate căile din HTML sunt relative (`./src/...`), deoarece GitHub Pages servește site-ul dintr-un subfolder
 
 ## Comenzi
-- Teste: `node --test teste/`
+- Teste: `node --test 'teste/**/*.test.js'`
 - Publicare: GitHub Pages din ramura `main`, rădăcina depozitului
 
 ## Convenții de cod
@@ -45,10 +45,12 @@ Obiectivul principal este învățarea fluxului de lucru în Claude Code, nu com
 - Inputurile numerice acceptă atât „2,5” cât și „2.5”
 - Valorile ≤ 0 sau nenumerice sunt respinse cu mesaj clar lângă câmp
 - Densități: beton 2500 kg/m³, oțel 7850 kg/m³, lemn 500 kg/m³
+- Dimensiuni permise: 0,1–100 m (constantele `DIMENSIUNE_MIN`, `DIMENSIUNE_MAX` din `src/calcule.js`)
+- Rotunjiri la afișare: volum și arie cu 2 zecimale, masă cu 0 zecimale; miile separate cu spațiu (ex.: „15 000 kg”)
 
 ## Mod de lucru
 - Lucrăm în iterații numerotate; fiecare iterație se încheie cu un pull request care are numărul iterației în titlu
 - Înainte de modificări care ating mai multe fișiere, propune un plan și așteaptă aprobarea
-- Rulează `node --test teste/` după orice modificare în `src/calcule.js`; nu deschide PR cu teste picate
+- Rulează `node --test 'teste/**/*.test.js'` după orice modificare în `src/calcule.js`; nu deschide PR cu teste picate
 - Orice funcție nouă din `src/calcule.js` primește cel puțin un test
 - La finalul fiecărei iterații, spune exact ce trebuie verificat vizual după publicare
